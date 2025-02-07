@@ -17,7 +17,7 @@ class ApiService {
         $response = Http::withHeaders([
             'X-Auth-Token' => $this->apiKey,
             'Accept' => 'application/json',
-        ])->retry(5, 1000)->get( // tenta 5 vezes a cada 1 segundo, api externa com erro de "Invalid Token"
+        ])->retry(10, 1000)->get( // tenta 5 vezes a cada 1 segundo, api externa com erro de "Invalid Token"
             "{$this->baseUrl}/{$endpoint}",
             $query
         );
