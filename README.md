@@ -1,6 +1,6 @@
 # Placar Online
 
-Projeto de detalhes de jogos de futebol consumindo [API externa][https://www.football-data.org/].
+Projeto de detalhes de jogos de futebol consumindo [API externa](https://www.football-data.org/).
 
 ## Instruções
 
