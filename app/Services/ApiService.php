@@ -1,7 +1,10 @@
 <?php
 
 namespace App\Services;
+
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Client\RequestException;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class ApiService {
 
@@ -17,10 +20,11 @@ class ApiService {
         $response = Http::withHeaders([
             'X-Auth-Token' => $this->apiKey,
             'Accept' => 'application/json',
-        ])->retry(10, 1000)->get( // tenta 5 vezes a cada 1 segundo, api externa com erro de "Invalid Token"
-            "{$this->baseUrl}/{$endpoint}",
-            $query
-        );
+        ])->get("{$this->baseUrl}/{$endpoint}", $query);
+
+        if ($response->status() == 429) {
+            abort(429);
+        }
 
         return $response->json();
     }

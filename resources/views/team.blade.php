@@ -4,18 +4,18 @@
 
 @section('content')
     <x-header
-        title="{{ $competition['name'] }}"
-        backUrl="{{ route('competitions') }}"
-        imgSrc="{{ $competition['emblem'] }}"
-        imgAlt="{{ $competition['code'] }}"
+        title="{{ $team['name'] }}"
+        backUrl="{{ route('competitions.competition', ['code' => $competitionCode]) }}"
+        imgSrc="{{ $team['crest'] }}"
+        imgAlt="{{ $team['tla'] }}"
     />
 
     <x-section-title
         title="Proximos jogos da temporada"
     />
-    @if ($futureCompetitionMatches)
+    @if ($futureTeamMatches)
         <x-card-vscroll>
-            @foreach ($futureCompetitionMatches as $futureMatches)
+            @foreach ($futureTeamMatches as $futureMatches)
                 <x-card
                     date="{{ $futureMatches['utcDate'] }}"
                     homeTeam="{{ $futureMatches['homeTeam'] }}"
@@ -32,9 +32,9 @@
     <x-section-title
         title="Ultimos jogos da temporada"
     />
-    @if ($finishedCompetitionMatches)
+    @if ($finishedTeamMatches)
         <x-card-vscroll>
-            @foreach ($finishedCompetitionMatches as $finishedMatches)
+            @foreach ($finishedTeamMatches as $finishedMatches)
                 <x-card
                     date="{{ $finishedMatches['utcDate'] }}"
                     homeTeam="{{ $finishedMatches['homeTeam'] }}"
@@ -46,24 +46,6 @@
     @else
         <x-not-found>
             Nenhum jogo encontrado para esta temporada.
-        </x-not-found>
-    @endif
-
-    <x-section-title
-        title="Times da {{ $competition['name'] }}"
-    />
-    @if ($teams)
-        <div class="grid grid-cols-3 gap-4 p-14 border">
-            @foreach ($teams as $team)
-                <a href="{{ route('team.team', ['id' => $team['id'], 'competitionCode' => $competition['code']]) }}" class="flex competitions-center space-x-4">
-                    <img src="{{ $team['crest'] }}" alt="{{ $team['name'] }}" class="w-12 h-12 object-cover">
-                    <h1 class="text-lg">{{ $team['name'] }}</h1>
-                </a>
-            @endforeach
-        </div>
-    @else
-        <x-not-found>
-            Nenhum time encontrado para esta temporada.
         </x-not-found>
     @endif
 @endsection

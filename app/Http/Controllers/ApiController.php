@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Services\ApiService;
 use Carbon\Carbon;
-use DateTime;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -16,11 +15,11 @@ class ApiController extends Controller {
         $this->apiService = $apiService;
     }
 
-    public function competitions(Request $request): View {
-        $queryParams = $request->query();
-        $data = $this->apiService->getData("competitions", $queryParams);
+    public function competitions(): View {
+        $data = $this->apiService->getData("competitions");
         $competitions = $data["competitions"];
 
+        // filtra somente o plano gratuito da api
         $competitions = array_filter($competitions, function ($competition) {
             return $competition["plan"] == "TIER_ONE";
         });
@@ -34,9 +33,44 @@ class ApiController extends Controller {
         return view("competitions", $data);
     }
 
-    public function competition($code): View {
+    public function competition(string $code): View {
+        $competitionMatches = $this->apiService->getData("competitions/{$code}/matches");
+
+        // formata a data para um visual mais agradavel
+        foreach ($competitionMatches["matches"] as &$match) {
+            $match["utcDate"] = Carbon::parse($match["utcDate"])->format("d/m/Y \à\s H:i");
+        }
+
+        $futureCompetitionMatches = [];
+        $finishedCompetitionMatches = [];
+        foreach ($competitionMatches['matches'] as $match) {
+            if ($match['status'] == "FINISHED") {
+               $finishedCompetitionMatches[] = $match;
+            } else {
+               $futureCompetitionMatches[] = $match;
+            }
+        }
+
+        $filteredFinishedMatches = collect($finishedCompetitionMatches)->map(function ($match) {
+            return [
+                'utcDate' => $match['utcDate'],
+                'homeTeam' => $match['homeTeam']['name'],
+                'awayTeam' => $match['awayTeam']['name'],
+                'score' => $match['score']['fullTime'] ?? null, // Evita erro caso não tenha esse campo
+            ];
+        })->toArray();
+
+        $filteredFutureMatches = collect($futureCompetitionMatches)->map(function ($match) {
+            return [
+                'utcDate' => $match['utcDate'],
+                'homeTeam' => $match['homeTeam']['name'],
+                'awayTeam' => $match['awayTeam']['name'],
+                'score' => $match['score']['fullTime'] ?? null, // Evita erro caso não tenha esse campo
+            ];
+        })->toArray();
+
         // dados da competition
-        $competition = $this->apiService->getData("competitions/{$code}");
+        $competition = $competitionMatches["competition"];
 
         // filtra para obter somente o necessario
         $filteredCompetition = [
@@ -46,55 +80,8 @@ class ApiController extends Controller {
             'emblem' => $competition['emblem'],
         ];
 
-        // variaveis importantes para buscar matches
-        $today = (new DateTime())->format("Y-m-d");
-        $lastDayMonth = (new DateTime("last day of this month"))->format("Y-m-d");
-        $firstDayMonth = (new DateTime("first day of this month"))->format("Y-m-d");
-
-        // busca proximas matches da competition dentro do mes atual
-        $queryFutureParams = [
-            "dateFrom" => $today,
-            "dateTo" => $lastDayMonth,
-        ];
-        $futureCompetitionMatches = $this->apiService->getData("competitions/{$code}/matches", $queryFutureParams);
-
-        // formatar a data para um visual mais agradavel
-        foreach ($futureCompetitionMatches["matches"] as &$future_matches) {
-            $future_matches["utcDate"] = Carbon::parse($future_matches["utcDate"])->format("d/m/Y \à\s H:i");
-        }
-
-        $filteredFutureMatches = collect($futureCompetitionMatches['matches'])->map(function ($match) {
-            return [
-                'utcDate' => $match['utcDate'],
-                'homeTeam' => $match['homeTeam']['name'],
-                'awayTeam' => $match['awayTeam']['name'],
-            ];
-        })->toArray();
-
-        // busca matches passadas da competition dentro do mes atual
-        $queryPastParams = [
-            "dateFrom" => $firstDayMonth,
-            "dateTo" => $today,
-        ];
-        $pastCompetitionMatches = $this->apiService->getData("competitions/{$code}/matches", $queryPastParams);
-
-        // formatar a data para um visual mais agradavel
-        foreach ($pastCompetitionMatches["matches"] as &$pastMatches) {
-            $pastMatches["utcDate"] = Carbon::parse($pastMatches["utcDate"])->format("d/m/Y \à\s H:i");
-        }
-
-        $filteredPastMatches = collect($pastCompetitionMatches['matches'])->map(function ($match) {
-            return [
-                'utcDate' => $match['utcDate'],
-                'homeTeam' => $match['homeTeam']['name'],
-                'awayTeam' => $match['awayTeam']['name'],
-                'score' => $match['score']['fullTime'] ?? null, // Evita erro caso não tenha esse campo
-            ];
-        })->toArray();
-
         // busca dados dos times da competition
         $teams = $this->apiService->getData("competitions/{$code}/teams");
-
         $filteredTeams = collect($teams['teams'])->map(function ($team) {
             return [
                 'id' => $team['id'],
@@ -104,13 +91,60 @@ class ApiController extends Controller {
         })->toArray();
 
         $data = [
-            "title" => "Competition {$code}",
+            "title" => "{$code}",
             "competition" => $filteredCompetition,
             "futureCompetitionMatches" => $filteredFutureMatches,
-            "pastCompetitionMatches" => $filteredPastMatches,
+            "finishedCompetitionMatches" => $filteredFinishedMatches,
             "teams" => $filteredTeams,
         ];
 
         return view("competition", $data);
+    }
+
+    public function team(string $competitionCode, string $id): View {
+        $team = $this->apiService->getData("teams/{$id}");
+        $teamMatches = $this->apiService->getData("teams/{$id}/matches");
+
+        foreach ($teamMatches["matches"] as &$match) {
+            $match["utcDate"] = Carbon::parse($match["utcDate"])->format("d/m/Y \à\s H:i");
+        }
+
+        $futureTeamMatches = [];
+        $finishedTeamMatches = [];
+        foreach ($teamMatches['matches'] as $match) {
+            if ($match['status'] == "FINISHED") {
+               $finishedTeamMatches[] = $match;
+            } else {
+               $futureTeamMatches[] = $match;
+            }
+        }
+
+        $filteredFinishedMatches = collect($finishedTeamMatches)->map(function ($match) {
+            return [
+                'utcDate' => $match['utcDate'],
+                'homeTeam' => $match['homeTeam']['name'],
+                'awayTeam' => $match['awayTeam']['name'],
+                'score' => $match['score']['fullTime'] ?? null, // Evita erro caso não tenha esse campo
+            ];
+        })->toArray();
+
+        $filteredFutureMatches = collect($futureTeamMatches)->map(function ($match) {
+            return [
+                'utcDate' => $match['utcDate'],
+                'homeTeam' => $match['homeTeam']['name'],
+                'awayTeam' => $match['awayTeam']['name'],
+                'score' => $match['score']['fullTime'] ?? null, // Evita erro caso não tenha esse campo
+            ];
+        })->toArray();
+
+        $data = [
+            "competitionCode" => $competitionCode,
+            "title" => $team["shortName"],
+            "team" => $team,
+            "futureTeamMatches" => $filteredFutureMatches,
+            "finishedTeamMatches" => $filteredFinishedMatches,
+        ];
+
+        return view("team", $data);
     }
 }

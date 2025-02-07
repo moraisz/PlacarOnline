@@ -1,3 +1,5 @@
+@props(['backUrl' => null, 'imgSrc' => null, 'imgAlt' => null, 'title'])
+
 <header class="bg-blue-600 text-white p-4 flex items-center relative">
     @if ($backUrl)
         <a href="{{ $backUrl }}" class="absolute left-4 flex items-center text-white hover:text-gray-300">
