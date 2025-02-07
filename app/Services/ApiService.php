@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\RequestException;
-use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 class ApiService {
 

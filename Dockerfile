@@ -1,6 +1,6 @@
 FROM php:8.3-fpm
 
-ARG user=yourusername
+ARG user=placar_online
 ARG uid=1000
 
 # Install system dependencies
