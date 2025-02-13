@@ -9,9 +9,9 @@ npm install
 # echo "Starting PHP-FPM..."
 # php-fpm
 
-echo "Starting PHP-FPM..."
-service nginx start
+echo "Start NGinx..."
+nginx -g "daemon off;" &
 
-# Iniciar PHP-FPM no modo foreground
+echo "Starting PHP-FPM..."
 php-fpm -F
 

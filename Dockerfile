@@ -46,9 +46,13 @@ COPY docker/nginx/nginx.conf /etc/nginx/conf.d/nginx.conf
 COPY ./docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
+RUN mkdir -p /var/lib/nginx/body && \
+    chown -R www-data:www-data /var/lib/nginx && \
+    chmod -R 777 /var/lib/nginx
+
 EXPOSE 8080
 
-USER $user
+USER root
 
 # Run shell file
 ENTRYPOINT ["/usr/local/bin/start.sh"]
