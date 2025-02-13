@@ -5,6 +5,7 @@ ARG uid=1000
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    nginx \
     curl \
     libpng-dev \
     libonig-dev \
@@ -30,20 +31,22 @@ RUN useradd -G www-data,root -u $uid -d /home/$user $user
 RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user
 
-# Install redis
-RUN pecl install -o -f redis \
-    && rm -rf /tmp/pear \
-    && docker-php-ext-enable redis
-
 # Set working directory
 WORKDIR /var/www
+
+COPY . /var/www
 
 # Copy custom configurations PHP
 COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
+# Copiar configurações do Nginx
+COPY docker/nginx/nginx.conf /etc/nginx/conf.d/nginx.conf
+
 # Copy shell file
 COPY ./docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
+
+EXPOSE 8080
 
 USER $user
 
